@@ -464,6 +464,23 @@ select {
   margin: 4px 0 0;
   color: var(--muted);
 }
+.category-page .category-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 66px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.category-page .category-sort {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .count-pill {
   margin-left: auto;
   background: #eaf5ec;

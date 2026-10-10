@@ -2,8 +2,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+
 import { getProducts, getCategories } from "../../../lib/api";
 import ProductGrid from "../../../components/ProductGrid";
+import CategorySort from "../../../components/CategorySort";
+
 import type { Product } from "../../../types/product";
 
 type CategoryInfo = {
@@ -13,9 +16,21 @@ type CategoryInfo = {
 };
 
 const fallbackCats: Record<string, CategoryInfo> = {
-  chal: { title: "চাল", icon: "🍚", keys: ["chal", "চাল"] },
-  dal: { title: "ডাল", icon: "🫘", keys: ["dal", "ডাল"] },
-  tel: { title: "তেল", icon: "🛢️", keys: ["tel", "তেল"] },
+  chal: {
+    title: "চাল",
+    icon: "🍚",
+    keys: ["chal", "চাল"],
+  },
+  dal: {
+    title: "ডাল",
+    icon: "🫘",
+    keys: ["dal", "ডাল"],
+  },
+  tel: {
+    title: "তেল",
+    icon: "🛢️",
+    keys: ["tel", "তেল"],
+  },
   sobji: {
     title: "সবজি",
     icon: "🥬",
@@ -70,9 +85,9 @@ async function CategoryContent({
 
     if (apiCategory) {
       cat = {
+        ...cat,
         title: apiCategory.nameBn || cat.title,
         icon: apiCategory.icon || cat.icon,
-        keys: cat.keys,
       };
     }
   } catch (error) {
@@ -97,19 +112,22 @@ async function CategoryContent({
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
-    if (sort === "asc") return a.today - b.today;
-    if (sort === "desc") return b.today - a.today;
+    const priceA = Number(a.today) || 0;
+    const priceB = Number(b.today) || 0;
+
+    if (sort === "asc") {
+      return priceA - priceB;
+    }
+
+    if (sort === "desc") {
+      return priceB - priceA;
+    }
+
     return 0;
   });
 
   return (
     <main className="container category-page">
-      <nav aria-label="Breadcrumb" className="breadcrumb">
-        <Link href="/">হোম</Link>
-        <span> / </span>
-        <span>{cat.title}</span>
-      </nav>
-
       <section className="category-hero">
         <div className="category-icon" aria-hidden="true">
           {cat.icon}
@@ -117,29 +135,27 @@ async function CategoryContent({
 
         <div>
           <h1>{cat.title}</h1>
-          <p>আপনার পছন্দের {cat.title} পণ্যের বাজারদর দেখুন।</p>
+          <p>
+            {sortedProducts.length}টি পণ্যের আজকের দাম ও পরিবর্তন
+          </p>
         </div>
       </section>
 
       <section className="category-products">
-        <div className="category-toolbar">
-          <h2>{cat.title} পণ্যসমূহ</h2>
+        <CategorySort />
 
-          <form method="GET">
-            <label htmlFor="sort">দাম অনুযায়ী সাজান: </label>
-            <select id="sort" name="sort" defaultValue={sort || ""}>
-              <option value="">ডিফল্ট</option>
-              <option value="asc">কম দাম থেকে বেশি</option>
-              <option value="desc">বেশি দাম থেকে কম</option>
-            </select>
+        {sortedProducts.length > 0 ? (
+          <ProductGrid products={sortedProducts} />
+        ) : (
+          <div className="empty-state">
+            <h3>এই ক্যাটাগরিতে কোনো পণ্য পাওয়া যায়নি</h3>
+            <p>অন্য ক্যাটাগরি নির্বাচন করে দেখুন।</p>
 
-            <button type="submit" className="button">
-              সাজান
-            </button>
-          </form>
-        </div>
-
-        <ProductGrid products={sortedProducts} />
+            <Link href="/" className="button">
+              হোম পেজে ফিরে যান
+            </Link>
+          </div>
+        )}
       </section>
     </main>
   );

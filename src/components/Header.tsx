@@ -74,7 +74,15 @@ function HeaderContent() {
           </span>
           <span>
             <strong>বাজার দর</strong>
-            <small>প্রতিদিনের বাজার, এক নজরে</small>
+            <p>
+              {new Date().toLocaleDateString("bn-BD", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+                timeZone: "Asia/Dhaka",
+              })}
+            </p>
           </span>
         </Link>
 

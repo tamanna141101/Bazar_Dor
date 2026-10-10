@@ -1,23 +1,33 @@
+
+import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug, formatBn, unitBn } from "../../../lib/api";
-export default async function ProductPage({
-  params,
-}: {
+
+type Props = {
   params: Promise<{ slug: string }>;
-}) {
+};
+
+async function ProductDetails({ params }: Props) {
   const { slug } = await params;
+
   let product;
+
   try {
     product = await getProductBySlug(slug);
-  } catch {}
+  } catch {
+    product = undefined;
+  }
+
   if (!product) notFound();
+
   const vals = product.markets.flatMap((m) => [m.min, m.max]);
-  const min = vals.length ? Math.min(...vals) : product.today,
-    max = vals.length ? Math.max(...vals) : product.today,
-    avg = vals.length
-      ? vals.reduce((a, b) => a + b, 0) / vals.length
-      : product.today;
+  const min = vals.length ? Math.min(...vals) : product.today;
+  const max = vals.length ? Math.max(...vals) : product.today;
+  const avg = vals.length
+    ? vals.reduce((a, b) => a + b, 0) / vals.length
+    : product.today;
+
   return (
     <div className="container detail-page">
       <div className="breadcrumbs">
@@ -29,6 +39,7 @@ export default async function ProductPage({
         <span>›</span>
         <span>{product.nameBn}</span>
       </div>
+
       <section className="detail-hero">
         <div className="detail-product">
           <span className="detail-emoji">{product.image}</span>
@@ -48,6 +59,7 @@ export default async function ProductPage({
             </span>
           </div>
         </div>
+
         <div className="today-price">
           <small>আজকের দাম</small>
           <strong>{formatBn(product.today)}</strong>
@@ -62,26 +74,32 @@ export default async function ProductPage({
           </b>
         </div>
       </section>
+
       <section className="panel">
         <h2>দামের সারসংক্ষেপ</h2>
+
         <div className="stats-grid">
           <div className="stat-card">
             <small>সর্বনিম্ন দাম</small>
             <strong className="green">{formatBn(min)} টাকা</strong>
             <span>সবচেয়ে কম দামের বাজার</span>
           </div>
+
           <div className="stat-card">
             <small>সর্বাধিক দাম</small>
             <strong className="red">{formatBn(max)} টাকা</strong>
             <span>সবচেয়ে বেশি দামের বাজার</span>
           </div>
+
           <div className="stat-card">
             <small>গড় দাম</small>
             <strong>{formatBn(avg)} টাকা</strong>
             <span>{unitBn(product.unit)} হিসেবে</span>
           </div>
         </div>
+
         <h2 className="table-title">বাজারভিত্তিক আজকের দাম</h2>
+
         {product.markets.length ? (
           <div className="table-scroll">
             <table>
@@ -102,7 +120,9 @@ export default async function ProductPage({
                     <td>{formatBn(m.min)} টাকা</td>
                     <td>{formatBn(m.max)} টাকা</td>
                     <td>
-                      <strong>{formatBn((m.min + m.max) / 2)} টাকা</strong>
+                      <strong>
+                        {formatBn((m.min + m.max) / 2)} টাকা
+                      </strong>
                     </td>
                   </tr>
                 ))}
@@ -113,9 +133,24 @@ export default async function ProductPage({
           <p>এই পণ্যের বাজারভিত্তিক তথ্য পাওয়া যায়নি।</p>
         )}
       </section>
+
       <Link href="/" className="back-link">
         ← হোম পেজে ফিরে যান
       </Link>
     </div>
+  );
+}
+
+export default function ProductPage({ params }: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="container detail-page">
+          <p>পণ্যের তথ্য লোড হচ্ছে...</p>
+        </div>
+      }
+    >
+      <ProductDetails params={params} />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getProducts, getCategories } from "../../../lib/api";
 import ProductGrid from "../../../components/ProductGrid";
 import type { Product } from "../../../types/product";
@@ -13,14 +14,18 @@ type CategoryInfo = {
 
 const fallbackCats: Record<string, CategoryInfo> = {
   chal: { title: "চাল", icon: "🍚", keys: ["chal", "চাল"] },
-  dal: { title: "ডাল", icon: "🥣", keys: ["dal", "ডাল"] },
+  dal: { title: "ডাল", icon: "🫘", keys: ["dal", "ডাল"] },
   tel: { title: "তেল", icon: "🛢️", keys: ["tel", "তেল"] },
   sobji: {
     title: "সবজি",
     icon: "🥬",
     keys: ["sobji", "vegetable", "সবজি"],
   },
-  mach: { title: "মাছ", icon: "🐟", keys: ["mach", "fish", "মাছ"] },
+  mach: {
+    title: "মাছ",
+    icon: "🐟",
+    keys: ["mach", "fish", "মাছ"],
+  },
   mangsho: {
     title: "মাংস",
     icon: "🍗",
@@ -38,108 +43,118 @@ const fallbackCats: Record<string, CategoryInfo> = {
   },
 };
 
-export default async function CategoryPage({
-  params,
-  searchParams,
-}: {
+type CategoryPageProps = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ sort?: string }>;
-}) {
+};
+
+async function CategoryContent({
+  params,
+  searchParams,
+}: CategoryPageProps) {
   const { slug } = await params;
   const { sort } = await searchParams;
 
   let cat = fallbackCats[slug];
 
-  if (!cat) notFound();
+  if (!cat) {
+    notFound();
+  }
 
   try {
     const categories = await getCategories();
+
     const apiCategory = categories.find(
-      (item) => item.slug === slug || item.id === slug,
+      (item) => item.slug === slug || item.id === slug
     );
 
     if (apiCategory) {
       cat = {
-        title:
-          apiCategory.nameBn || fallbackCats[slug]?.title || slug,
-        icon:
-          apiCategory.icon || fallbackCats[slug]?.icon || "🛒",
-        keys: fallbackCats[slug]?.keys || [
-          slug,
-          apiCategory.nameBn || slug,
-        ],
+        title: apiCategory.nameBn || cat.title,
+        icon: apiCategory.icon || cat.icon,
+        keys: cat.keys,
       };
     }
-  } catch {
-    // API unavailable হলে fallback category ব্যবহার হবে
+  } catch (error) {
+    console.error("Failed to load categories:", error);
   }
 
   let products: Product[] = [];
 
   try {
     products = await getProducts();
-  } catch {
-    // API unavailable হলে empty product list দেখাবে
+  } catch (error) {
+    console.error("Failed to load products:", error);
   }
 
-  const filtered = products.filter((p) =>
-    cat.keys.some((k) =>
-      `${p.category} ${p.categoryNameBn}`
-        .toLowerCase()
-        .includes(k.toLowerCase()),
-    ),
-  );
+  const filteredProducts = products.filter((product) => {
+    const categoryText =
+      `${product.category ?? ""} ${product.categoryNameBn ?? ""}`.toLowerCase();
 
-  const sorted = [...filtered].sort((a, b) =>
-    sort === "asc"
-      ? a.today - b.today
-      : sort === "desc"
-        ? b.today - a.today
-        : 0,
-  );
+    return cat.keys.some((key) =>
+      categoryText.includes(key.toLowerCase())
+    );
+  });
+
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sort === "asc") return a.today - b.today;
+    if (sort === "desc") return b.today - a.today;
+    return 0;
+  });
 
   return (
-    <div className="container category-page">
-      <div className="breadcrumbs">
+    <main className="page-container">
+      <nav aria-label="Breadcrumb" className="breadcrumb">
         <Link href="/">হোম</Link>
-        <span>›</span>
+        <span> / </span>
         <span>{cat.title}</span>
-      </div>
+      </nav>
 
       <section className="category-hero">
-        <span className="category-hero-icon">{cat.icon}</span>
+        <div className="category-icon" aria-hidden="true">
+          {cat.icon}
+        </div>
 
         <div>
           <h1>{cat.title}</h1>
-          <p>এই বিভাগের আজকের দাম ও পরিবর্তন</p>
+          <p>আপনার পছন্দের {cat.title} পণ্যের বাজারদর দেখুন।</p>
         </div>
-
-        <span className="count-pill">{filtered.length}টি পণ্য</span>
       </section>
 
-      <div className="sort-row">
-        <span>পণ্যের তালিকা</span>
+      <section className="category-products">
+        <div className="category-toolbar">
+          <h2>{cat.title} পণ্যসমূহ</h2>
 
-        <form>
-          <label htmlFor="sort">সাজান</label>
+          <form method="GET">
+            <label htmlFor="sort">দাম অনুযায়ী সাজান: </label>
+            <select id="sort" name="sort" defaultValue={sort || ""}>
+              <option value="">ডিফল্ট</option>
+              <option value="asc">কম দাম থেকে বেশি</option>
+              <option value="desc">বেশি দাম থেকে কম</option>
+            </select>
 
-          <select
-            id="sort"
-            name="sort"
-            defaultValue={sort || "default"}
-          >
-            <option value="default">ডিফল্ট</option>
-            <option value="asc">দাম: কম থেকে বেশি</option>
-            <option value="desc">দাম: বেশি থেকে কম</option>
-          </select>
+            <button type="submit" className="button">
+              সাজান
+            </button>
+          </form>
+        </div>
 
-          <button className="button button-small" type="submit">
-            প্রয়োগ
-          </button>
-        </form>
-      </div>
+        <ProductGrid products={sortedProducts} />
+      </section>
+    </main>
+  );
+}
 
-      <ProductGrid products={sorted} />
-    </div>
+export default function CategoryPage(props: CategoryPageProps) {
+  return (
+    <Suspense
+      fallback={
+        <main className="page-container">
+          <p>ক্যাটাগরি লোড হচ্ছে...</p>
+        </main>
+      }
+    >
+      <CategoryContent {...props} />
+    </Suspense>
   );
 }

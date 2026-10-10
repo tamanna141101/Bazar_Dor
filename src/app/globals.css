@@ -1029,3 +1029,14 @@ tbody tr:last-child td {
     margin-left: auto;
   }
 }
+
+.product-count {
+  margin: 0 0 16px;
+  color: #647067;
+  font-size: 14px;
+}
+
+.product-count strong {
+  color: #198754;
+  font-weight: 700;
+}

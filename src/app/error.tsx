@@ -1,0 +1,1 @@
+"use client";import {useEffect} from "react";export default function ErrorPage({error,reset}:{error:Error&{digest?:string};reset:()=>void}){useEffect(()=>console.error(error),[error]);return <div className="container not-found"><h1>দুঃখিত, সমস্যা হয়েছে</h1><p>তথ্য লোড করা যায়নি। আবার চেষ্টা করুন।</p><button className="button" onClick={()=>reset()}>আবার চেষ্টা করুন</button></div>}

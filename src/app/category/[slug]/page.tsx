@@ -103,7 +103,7 @@ async function CategoryContent({
   });
 
   return (
-    <main className="page-container">
+    <main className="container category-page">
       <nav aria-label="Breadcrumb" className="breadcrumb">
         <Link href="/">হোম</Link>
         <span> / </span>
@@ -149,7 +149,7 @@ export default function CategoryPage(props: CategoryPageProps) {
   return (
     <Suspense
       fallback={
-        <main className="page-container">
+        <main className="container category-page">
           <p>ক্যাটাগরি লোড হচ্ছে...</p>
         </main>
       }

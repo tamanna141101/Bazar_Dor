@@ -1030,13 +1030,36 @@ tbody tr:last-child td {
   }
 }
 
-.product-count {
-  margin: 0 0 16px;
-  color: #647067;
-  font-size: 14px;
+.category-page {
+  width: min(1120px, calc(100% - 40px));
+  margin-inline: auto;
+  padding-top: 28px;
+  padding-bottom: 70px;
 }
 
-.product-count strong {
-  color: #198754;
-  font-weight: 700;
+.category-page .product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .category-page {
+    width: calc(100% - 28px);
+  }
+
+  .category-page .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 420px) {
+  .category-page {
+    width: calc(100% - 22px);
+  }
+
+  .category-page .product-grid {
+    grid-template-columns: 1fr;
+  }
 }

@@ -1063,3 +1063,10 @@ tbody tr:last-child td {
     grid-template-columns: 1fr;
   }
 }
+
+.price-difference {
+  display: block;
+  margin-top: 8px;
+  color: #647067;
+  font-size: 12px;
+}

@@ -28,6 +28,17 @@ async function ProductDetails({ params }: Props) {
     ? vals.reduce((a, b) => a + b, 0) / vals.length
     : product.today;
 
+
+  const difference = Number(product.today) - Number(product.yesterday);
+
+  const changeText =
+    difference > 0
+      ? `দাম বেড়েছে · ${formatBn(Math.abs(difference))} টাকা বেশি`
+      : difference < 0
+        ? `দাম কমেছে · ${formatBn(Math.abs(difference))} টাকা কম`
+        : "· ০ টাকা পরিবর্তন নেই";
+
+
   return (
     <div className="container detail-page">
       <div className="breadcrumbs">
@@ -48,15 +59,12 @@ async function ProductDetails({ params }: Props) {
             <p>
               {unitBn(product.unit)} · {product.categoryNameBn}
             </p>
+
             <span className="market-note">
-              গতকালের তুলনায় আজ দাম{" "}
-              {product.change.dir === "up"
-                ? "বেড়েছে"
-                : product.change.dir === "down"
-                  ? "কমেছে"
-                  : "অপরিবর্তিত"}{" "}
-              · {formatBn(product.change.pct)}%
+              গতকালের তুলনায় আজ {changeText} ·{" "}
+           
             </span>
+
           </div>
         </div>
 

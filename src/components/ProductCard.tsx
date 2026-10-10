@@ -16,14 +16,14 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 function getProductIcon(product: Product): string {
   const category = product.categoryNameBn?.trim();
-
-  // API image যদি emoji হয়, সেটি ব্যবহার করো।
   const image = product.image?.trim();
+
   if (image && /\p{Extended_Pictographic}/u.test(image)) {
     return image;
   }
 
   const categoryIcon = product.categoryIcon?.trim();
+
   if (
     categoryIcon &&
     /\p{Extended_Pictographic}/u.test(categoryIcon)
@@ -39,8 +39,25 @@ export default function ProductCard({
 }: {
   product: Product;
 }) {
-  const dir = product.change?.dir || "flat";
-  const icon = getProductIcon(product);
+  const today = Number(product.today) || 0;
+  const yesterday = Number(product.yesterday) || 0;
+
+  const difference = today - yesterday;
+
+  const percentage =
+    yesterday > 0
+      ? (Math.abs(difference) / yesterday) * 100
+      : 0;
+
+  const changeDir =
+    difference > 0 ? "up" : difference < 0 ? "down" : "flat";
+
+  const changeText =
+    difference > 0
+      ? `${formatBn(Math.abs(difference))} টাকা বেশি`
+      : difference < 0
+        ? `${formatBn(Math.abs(difference))} টাকা কম`
+        : "· ০ টাকা পরিবর্তন নেই";
 
   return (
     <Link
@@ -49,7 +66,7 @@ export default function ProductCard({
     >
       <div className="product-top">
         <span className="product-image" aria-hidden="true">
-          {icon}
+          {getProductIcon(product)}
         </span>
 
         <span>
@@ -63,14 +80,18 @@ export default function ProductCard({
       <div className="price-bottom">
         <span>
           <small>আজকের দাম</small>
-          <strong>{formatBn(product.today)} টাকা</strong>
+          <strong>{formatBn(today)} টাকা</strong>
         </span>
 
-        <span className={`change-badge ${dir}`}>
-          {dir === "up" ? "▲" : dir === "down" ? "▼" : "—"}{" "}
-          {formatBn(product.change?.pct || 0)}%
+        <span className={`change-badge ${changeDir}`}>
+          {difference > 0 ? "▲" : difference < 0 ? "▼" : "—"}{" "}
+          {formatBn(Number(percentage.toFixed(2)))}%
         </span>
       </div>
+
+      <small className="price-difference">
+        {changeText}
+      </small>
     </Link>
   );
 }

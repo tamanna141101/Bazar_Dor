@@ -191,7 +191,7 @@ select {
   min-height: calc(100vh - 180px);
 }
 .container {
-  width: min(1120px, calc(100% - 40px));
+  width: min(1200px, calc(100% - 32px));
   margin-inline: auto;
 }
 .home-page {

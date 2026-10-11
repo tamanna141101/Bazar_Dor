@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useState } from "react";
@@ -5,7 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
-import { UserRound } from "lucide-react";
+import { UserRound, Menu, X } from "lucide-react";
 import { authClient } from "../lib/auth-client";
 
 const cats = [
@@ -27,6 +28,7 @@ function HeaderContent() {
   const user = session?.user ?? null;
 
   const [menu, setMenu] = useState(false);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
 
   async function logout() {
     try {
@@ -135,18 +137,59 @@ function HeaderContent() {
       </div>
 
       <nav className="category-nav">
-        <div className="nav-inner">
-          {cats.map(([slug, icon, label]) => (
-            <Link
-              key={slug}
-              className={`nav-link ${
-                path === `/category/${slug}` ? "active" : ""
-              }`}
-              href={`/category/${slug}`}
+        <div className="nav-inner relative flex items-center justify-end md:justify-center">
+          {/* Desktop Category Links */}
+          <div className="hidden items-center gap-5 md:flex">
+            {cats.map(([slug, icon, label]) => (
+              <Link
+                key={slug}
+                className={`nav-link ${
+                  path === `/category/${slug}` ? "active" : ""
+                }`}
+                href={`/category/${slug}`}
+              >
+                {icon} {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Mobile Hamburger Menu */}
+          <div className="relative md:hidden">
+            <button
+              type="button"
+              onClick={() =>
+                setCategoryMenuOpen((current) => !current)
+              }
+              aria-label="ক্যাটাগরি মেনু"
+              aria-expanded={categoryMenuOpen}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-100"
             >
-              {icon} {label}
-            </Link>
-          ))}
+              {categoryMenuOpen ? (
+                <X size={24} />
+              ) : (
+                <Menu size={24} />
+              )}
+            </button>
+
+            {categoryMenuOpen && (
+              <div className="absolute right-0 top-full z-50 mt-2 grid w-72 grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+                {cats.map(([slug, icon, label]) => (
+                  <Link
+                    key={slug}
+                    href={`/category/${slug}`}
+                    onClick={() => setCategoryMenuOpen(false)}
+                    className={`rounded-lg px-3 py-3 text-sm transition ${
+                      path === `/category/${slug}`
+                        ? "bg-green-50 font-semibold text-green-700"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    {icon} {label}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
 

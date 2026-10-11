@@ -1,10 +1,14 @@
+
 import Link from "next/link";
+import { connection } from "next/server";
 import { getProducts } from "../lib/api";
 import ProductGrid from "../components/ProductGrid";
 import type { Product } from "../types/product";
 import Image from "next/image";
 
 export default async function HomePage() {
+  await connection();
+
   let products: Product[] = [];
   let error = false;
 
@@ -24,20 +28,46 @@ export default async function HomePage() {
     .sort((a, b) => (b.change?.pct || 0) - (a.change?.pct || 0))
     .slice(0, 6);
 
+  const now = new Date();
+
+  const banglaDate = now.toLocaleDateString("bn-BD", {
+    timeZone: "Asia/Dhaka",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const banglaTime = now.toLocaleTimeString("bn-BD", {
+    timeZone: "Asia/Dhaka",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
   return (
     <div className="container home-page">
       <section className="hero">
         <div className="hero-copy">
-          <span className="eyebrow">আজকের বাজার আপডেট</span>
+          <div className="market-update-title">
+         
+            <span className="market-update-time">
+              {banglaDate} · {banglaTime}
+            </span>
+          </div>
+
           <h1>আজকের বাজারের দাম এক নজরে</h1>
+
           <p>
             চাল, ডাল, তেল, সবজি, মাছ, মাংস, ডিম ও মসলার দাম — বাজারভিত্তিক তথ্য,
             গড়, সর্বনিম্ন-সর্বোচ্চ এবং দামের পরিবর্তন এক জায়গায়।
           </p>
+
           <a href="#সব-পণ্য" className="button">
             সব পণ্য দেখুন <span>→</span>
           </a>
         </div>
+
         <div className="hero-art">
           <Image
             src="/assets/bazar-hero.png"
@@ -82,8 +112,9 @@ export default async function HomePage() {
             <h2>সব পণ্য</h2>
             <span>বাজারের নিত্যপ্রয়োজনীয় পণ্যের তালিকা</span>
           </div>
-          <span>{products.length}টি পণ্য</span>
+          <span>{products.length.toLocaleString("bn-BD")}টি পণ্য</span>
         </div>
+
         {products.length ? (
           <ProductGrid products={products} />
         ) : (

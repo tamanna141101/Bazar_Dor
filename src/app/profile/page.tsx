@@ -5,11 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-
-type User = {
-  name: string;
-  email: string;
-};
+import { authClient } from "../../lib/auth-client";
 
 function LogOutIcon() {
   return (
@@ -34,36 +30,25 @@ function LogOutIcon() {
 export default function ProfilePage() {
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user ?? null;
+
   const [name, setName] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    try {
-      const savedUser = JSON.parse(
-        localStorage.getItem("bazardor-user") || "null"
-      ) as User | null;
+    if (isPending) return;
 
-      if (!savedUser) {
-        toast.error("প্রোফাইল দেখতে সাইন ইন করুন");
-        router.replace("/signin");
-        return;
-      }
-
-      setUser(savedUser);
-      setName(savedUser.name);
-    } catch {
-      toast.error("প্রোফাইল লোড করা যায়নি। আবার সাইন ইন করুন।");
-      router.replace("/signin");
-    } finally {
-      setLoading(false);
+    if (!user) {
+      router.replace("/signin?callbackURL=%2Fprofile");
+      return;
     }
-  }, [router]);
 
-  function update(e: React.FormEvent<HTMLFormElement>) {
+    setName(user.name || "");
+  }, [user, isPending, router]);
+
+  async function update(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-
-    if (!user) return;
 
     const trimmedName = name.trim();
 
@@ -72,43 +57,48 @@ export default function ProfilePage() {
       return;
     }
 
-    const updatedUser = { ...user, name: trimmedName };
+    setSaving(true);
 
     try {
-      localStorage.setItem(
-        "bazardor-user",
-        JSON.stringify(updatedUser)
-      );
+      const result = await authClient.updateUser({
+        name: trimmedName,
+      });
 
-      const users = JSON.parse(
-        localStorage.getItem("bazardor-users") || "[]"
-      ).map((u: User) =>
-        u.email.toLowerCase() === user.email.toLowerCase()
-          ? { ...u, name: trimmedName }
-          : u
-      );
+      if (result.error) {
+        toast.error(
+          result.error.message || "প্রোফাইল আপডেট করা যায়নি"
+        );
+        return;
+      }
 
-      localStorage.setItem("bazardor-users", JSON.stringify(users));
-
-      setUser(updatedUser);
-      setName(trimmedName);
-
-      window.dispatchEvent(new Event("bazardor-auth"));
+      await authClient.getSession();
       toast.success("প্রোফাইল সফলভাবে আপডেট হয়েছে");
+      router.refresh();
     } catch {
-      toast.error("প্রোফাইল আপডেট করা যায়নি");
+      toast.error("প্রোফাইল আপডেট করা যায়নি। আবার চেষ্টা করুন।");
+    } finally {
+      setSaving(false);
     }
   }
 
-  function handleSignOut() {
-    localStorage.removeItem("bazardor-user");
-    window.dispatchEvent(new Event("bazardor-auth"));
+  async function handleSignOut() {
+    try {
+      const result = await authClient.signOut();
 
-    toast.success("সাইন আউট সফল হয়েছে");
-    router.push("/signin");
+      if (result.error) {
+        toast.error("সাইন আউট করা যায়নি");
+        return;
+      }
+
+      toast.success("সাইন আউট সফল হয়েছে");
+      router.replace("/signin");
+      router.refresh();
+    } catch {
+      toast.error("সাইন আউট করা যায়নি। আবার চেষ্টা করুন।");
+    }
   }
 
-  if (loading) {
+  if (isPending || !user) {
     return (
       <main className="min-h-screen bg-gray-50 px-4 py-20">
         <div className="mx-auto max-w-2xl rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm">
@@ -118,12 +108,9 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user) return null;
-
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10 sm:py-14">
       <div className="mx-auto max-w-2xl">
-        {/* Page Header */}
         <div className="mb-8">
           <Link
             href="/"
@@ -142,19 +129,28 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* Profile Card */}
         <section className="mb-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
           <div className="h-2 bg-green-700" />
 
           <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
             <div className="flex min-w-0 items-center gap-4">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-4 border-green-100 bg-green-700 text-2xl font-bold text-white">
-                {user.name.slice(0, 1).toUpperCase()}
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-4 border-green-100 bg-green-700 text-2xl font-bold text-white">
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt={user.name || "Profile"}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  (user.name || user.email || "U")
+                    .slice(0, 1)
+                    .toUpperCase()
+                )}
               </div>
 
               <div className="min-w-0">
                 <h2 className="break-words text-xl font-bold text-gray-900">
-                  {user.name}
+                  {user.name || "ব্যবহারকারী"}
                 </h2>
 
                 <p className="mt-1 break-all text-sm text-gray-500">
@@ -179,7 +175,6 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {/* Update Form */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6 border-b border-gray-100 pb-5">
             <h2 className="text-xl font-bold text-gray-900">
@@ -235,9 +230,10 @@ export default function ProfilePage() {
 
             <button
               type="submit"
-              className="w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-200 sm:w-auto sm:min-w-40"
+              disabled={saving}
+              className="w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-4 focus:ring-green-200 sm:w-auto sm:min-w-40"
             >
-              পরিবর্তন সংরক্ষণ করুন
+              {saving ? "সংরক্ষণ হচ্ছে..." : "পরিবর্তন সংরক্ষণ করুন"}
             </button>
           </form>
         </section>

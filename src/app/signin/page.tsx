@@ -1,10 +1,10 @@
-
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { authClient } from "../../lib/auth-client";
 
 function GoogleIcon() {
   return (
@@ -53,42 +53,49 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  const getCallbackURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    const callbackURL = params.get("callbackURL");
+
+    // Only allow internal paths to avoid external redirects.
+    return callbackURL?.startsWith("/") && !callbackURL.startsWith("//")
+      ? callbackURL
+      : "/";
+  };
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const users = JSON.parse(
-        localStorage.getItem("bazardor-users") || "[]"
-      );
+      const result = await authClient.signIn.email({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      const user = users.find(
-        (x: { email: string; password: string }) =>
-          x.email.toLowerCase() === email.trim().toLowerCase() &&
-          x.password === password
-      );
-
-      if (!user) {
-        toast.error("ইমেইল বা পাসওয়ার্ড সঠিক নয়। আগে অ্যাকাউন্ট তৈরি করুন।");
+      if (result.error) {
+        toast.error(result.error.message || "Sign in failed");
         return;
       }
 
-      localStorage.setItem(
-        "bazardor-user",
-        JSON.stringify({
-          name: user.name,
-          email: user.email,
-        })
-      );
-
-      window.dispatchEvent(new Event("bazardor-auth"));
-
       toast.success("সাইন ইন সফল হয়েছে!");
-      router.push("/");
+      router.push(getCallbackURL());
+      router.refresh();
     } catch {
       toast.error("সাইন ইন করা যায়নি। আবার চেষ্টা করুন।");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function socialSignIn(provider: "google" | "github") {
+    try {
+      await authClient.signIn.social({
+        provider,
+        callbackURL: getCallbackURL(),
+      });
+    } catch {
+      toast.error(`${provider === "google" ? "Google" : "GitHub"} দিয়ে সাইন ইন করা যায়নি।`);
     }
   }
 
@@ -166,9 +173,7 @@ export default function SignInPage() {
         <div className="flex w-full gap-3">
           <button
             type="button"
-            onClick={() =>
-              toast("Google login চালু করতে OAuth configuration প্রয়োজন।")
-            }
+            onClick={() => socialSignIn("google")}
             className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-2 py-3 text-sm font-medium text-gray-800 transition hover:bg-gray-50 sm:px-3"
           >
             <GoogleIcon />
@@ -177,9 +182,7 @@ export default function SignInPage() {
 
           <button
             type="button"
-            onClick={() =>
-              toast("GitHub login চালু করতে OAuth configuration প্রয়োজন।")
-            }
+            onClick={() => socialSignIn("github")}
             className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-2 py-3 text-sm font-medium text-gray-800 transition hover:bg-gray-50 sm:px-3"
           >
             <GithubIcon />

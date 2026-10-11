@@ -1,12 +1,12 @@
-
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { UserRound } from "lucide-react";
+import { authClient } from "../lib/auth-client";
 
 const cats = [
   ["chal", "🍚", "চাল"],
@@ -23,42 +23,28 @@ function HeaderContent() {
   const path = usePathname();
   const router = useRouter();
 
-  const [user, setUser] = useState<{
-    name: string;
-    email: string;
-  } | null>(null);
+  const { data: session, isPending } = authClient.useSession();
+  const user = session?.user ?? null;
 
   const [menu, setMenu] = useState(false);
 
-  useEffect(() => {
-    const read = () => {
-      try {
-        setUser(
-          JSON.parse(localStorage.getItem("bazardor-user") || "null"),
-        );
-      } catch {
-        setUser(null);
+  async function logout() {
+    try {
+      const result = await authClient.signOut();
+
+      if (result.error) {
+        toast.error("সাইন আউট করা যায়নি।");
+        return;
       }
-    };
 
-    read();
-
-    window.addEventListener("storage", read);
-    window.addEventListener("bazardor-auth", read);
-
-    return () => {
-      window.removeEventListener("storage", read);
-      window.removeEventListener("bazardor-auth", read);
-    };
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem("bazardor-user");
-    setUser(null);
-    setMenu(false);
-    toast.success("সাইন আউট সম্পন্ন");
-    router.push("/");
-  };
+      setMenu(false);
+      toast.success("সাইন আউট সম্পন্ন");
+      router.push("/");
+      router.refresh();
+    } catch {
+      toast.error("সাইন আউট করা যায়নি। আবার চেষ্টা করুন।");
+    }
+  }
 
   return (
     <header className="site-header">
@@ -73,6 +59,7 @@ function HeaderContent() {
               priority
             />
           </span>
+
           <span>
             <strong>বাজার দর</strong>
             <p>
@@ -88,33 +75,50 @@ function HeaderContent() {
         </Link>
 
         <div className="auth-area">
-          {user ? (
+          {isPending ? (
+            <span className="login-link">লোড হচ্ছে...</span>
+          ) : user ? (
             <div className="profile-wrap">
               <button
+                type="button"
                 className="profile-button"
-                onClick={() => setMenu(!menu)}
+                onClick={() => setMenu((current) => !current)}
+                aria-expanded={menu}
               >
                 <span className="avatar">
-                  {user.name?.slice(0, 1) || <UserRound size={20} />}
+                  {user.image ? (
+                    <img
+                      src={user.image}
+                      alt={user.name || "Profile"}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    user.name?.slice(0, 1) || <UserRound size={20} />
+                  )}
                 </span>
-                <span>{user.name}</span>⌄
-              </button>
 
+                <span>{user.name || user.email}</span>
+                ⌄
+              </button>
 
               {menu && (
                 <div className="profile-menu !bg-white">
-                  <strong>{user.name}</strong>
+                  <strong>{user.name || "ব্যবহারকারী"}</strong>
                   <small>{user.email}</small>
-                  
-                  <Link href="/profile" onClick={() => setMenu(false)}>
+
+                  <Link
+                    href="/profile"
+                    onClick={() => setMenu(false)}
+                  >
                     <UserRound size={18} />
                     <span>আমার প্রোফাইল</span>
                   </Link>
 
-                  <button onClick={logout}>↩ সাইন আউট</button>
+                  <button type="button" onClick={logout}>
+                    ↩ সাইন আউট
+                  </button>
                 </div>
               )}
-
             </div>
           ) : (
             <>
@@ -135,8 +139,9 @@ function HeaderContent() {
           {cats.map(([slug, icon, label]) => (
             <Link
               key={slug}
-              className={`nav-link ${path === `/category/${slug}` ? "active" : ""
-                }`}
+              className={`nav-link ${
+                path === `/category/${slug}` ? "active" : ""
+              }`}
               href={`/category/${slug}`}
             >
               {icon} {label}

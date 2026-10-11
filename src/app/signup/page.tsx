@@ -1,18 +1,14 @@
-
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { authClient } from "../../lib/auth-client";
 
 function GoogleIcon() {
   return (
-    <svg
-      className="h-5 w-5 shrink-0"
-      viewBox="0 0 48 48"
-      aria-hidden="true"
-    >
+    <svg className="h-5 w-5 shrink-0" viewBox="0 0 48 48" aria-hidden="true">
       <path
         fill="#4285F4"
         d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5.1h6.6c3.9-3.6 6.1-8.8 6.1-15Z"
@@ -46,12 +42,6 @@ function GithubIcon() {
   );
 }
 
-type StoredUser = {
-  name: string;
-  email: string;
-  password: string;
-};
-
 export default function SignUpPage() {
   const router = useRouter();
 
@@ -61,52 +51,65 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    const trimmedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!trimmedName) {
+      toast.error("আপনার নাম লিখুন।");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error("পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।");
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast.error("দুটি পাসওয়ার্ড মিলছে না।");
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const users: StoredUser[] = JSON.parse(
-        localStorage.getItem("bazardor-users") || "[]"
-      );
+      const result = await authClient.signUp.email({
+        name: trimmedName,
+        email: normalizedEmail,
+        password,
+      });
 
-      const normalizedEmail = email.trim().toLowerCase();
-
-      const existingUser = users.some(
-        (user) => user.email.toLowerCase() === normalizedEmail
-      );
-
-      if (existingUser) {
-        toast.error("এই ইমেইল দিয়ে আগে থেকেই অ্যাকাউন্ট আছে।");
+      if (result.error) {
+        toast.error(
+          result.error.message || "অ্যাকাউন্ট তৈরি করা যায়নি।"
+        );
         return;
       }
 
-      const newUser: StoredUser = {
-        name: name.trim(),
-        email: normalizedEmail,
-        password,
-      };
+      toast.success("অ্যাকাউন্ট তৈরি হয়েছে!");
 
-      users.push(newUser);
-      localStorage.setItem("bazardor-users", JSON.stringify(users));
-
-      toast.success("অ্যাকাউন্ট তৈরি হয়েছে! এবার সাইন ইন করুন।");
-      router.push("/signin");
+      // Better Auth email signup normally signs the user in automatically.
+      router.push("/");
+      router.refresh();
     } catch {
       toast.error("অ্যাকাউন্ট তৈরি করা যায়নি। আবার চেষ্টা করুন।");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function socialSignUp(provider: "google" | "github") {
+    try {
+      await authClient.signIn.social({
+        provider,
+        callbackURL: "/",
+      });
+    } catch {
+      toast.error(
+        `${provider === "google" ? "Google" : "GitHub"} দিয়ে সাইন আপ করা যায়নি।`
+      );
     }
   }
 
@@ -123,7 +126,7 @@ export default function SignUpPage() {
         <div className="mb-7 text-center">
           <h1 className="text-3xl font-bold text-gray-900">সাইন আপ</h1>
           <p className="mt-2 text-sm text-gray-600">
-            নতুন বাজার দর অ্যাকাউন্ট তৈরি করুন
+            বাজার দর অ্যাকাউন্ট তৈরি করুন
           </p>
         </div>
 
@@ -142,7 +145,7 @@ export default function SignUpPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="আপনার নাম লিখুন"
+              placeholder="আপনার পুরো নাম লিখুন"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
             />
           </div>
@@ -178,10 +181,10 @@ export default function SignUpPage() {
               type="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="কমপক্ষে ৬ অক্ষর"
+              placeholder="কমপক্ষে ৮ অক্ষরের পাসওয়ার্ড"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
             />
           </div>
@@ -198,10 +201,10 @@ export default function SignUpPage() {
               type="password"
               autoComplete="new-password"
               required
-              minLength={6}
+              minLength={8}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="আবার পাসওয়ার্ড লিখুন"
+              placeholder="পাসওয়ার্ড আবার লিখুন"
               className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
             />
           </div>
@@ -224,9 +227,7 @@ export default function SignUpPage() {
         <div className="flex w-full gap-3">
           <button
             type="button"
-            onClick={() =>
-              toast("Google login চালু করতে OAuth configuration প্রয়োজন।")
-            }
+            onClick={() => socialSignUp("google")}
             className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-2 py-3 text-sm font-medium text-gray-800 transition hover:bg-gray-50 sm:px-3"
           >
             <GoogleIcon />
@@ -235,9 +236,7 @@ export default function SignUpPage() {
 
           <button
             type="button"
-            onClick={() =>
-              toast("GitHub login চালু করতে OAuth configuration প্রয়োজন।")
-            }
+            onClick={() => socialSignUp("github")}
             className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-2 py-3 text-sm font-medium text-gray-800 transition hover:bg-gray-50 sm:px-3"
           >
             <GithubIcon />

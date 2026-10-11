@@ -99,8 +99,7 @@ function HeaderContent() {
                   )}
                 </span>
 
-                <span>{user.name || user.email}</span>
-                ⌄
+                <span>{user.name || user.email}</span>⌄
               </button>
 
               {menu && (
@@ -136,10 +135,11 @@ function HeaderContent() {
         </div>
       </div>
 
-      <nav className="category-nav">
-        <div className="nav-inner relative flex items-center justify-end md:justify-center">
-          {/* Desktop Category Links */}
-          <div className="hidden items-center gap-5 md:flex">
+      {/* Category Navigation */}
+      <nav className="category-nav relative">
+        <div className="nav-inner relative flex items-center justify-start overflow-visible">
+          {/* Desktop: Category links on the left */}
+          <div className="hidden flex-wrap items-center justify-start gap-5 md:flex">
             {cats.map(([slug, icon, label]) => (
               <Link
                 key={slug}
@@ -153,16 +153,20 @@ function HeaderContent() {
             ))}
           </div>
 
-          {/* Mobile Hamburger Menu */}
-          <div className="relative md:hidden">
+          {/* Mobile: Hamburger and dropdown */}
+          <div className="relative ml-auto md:hidden">
             <button
               type="button"
               onClick={() =>
                 setCategoryMenuOpen((current) => !current)
               }
-              aria-label="ক্যাটাগরি মেনু"
+              aria-label={
+                categoryMenuOpen
+                  ? "ক্যাটাগরি মেনু বন্ধ করুন"
+                  : "ক্যাটাগরি মেনু খুলুন"
+              }
               aria-expanded={categoryMenuOpen}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-100"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               {categoryMenuOpen ? (
                 <X size={24} />
@@ -172,7 +176,7 @@ function HeaderContent() {
             </button>
 
             {categoryMenuOpen && (
-              <div className="absolute right-0 top-full z-50 mt-2 grid w-72 grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-2 shadow-lg">
+              <div className="absolute right-0 top-full z-[100] mt-2 grid w-[min(288px,calc(100vw-32px))] grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
                 {cats.map(([slug, icon, label]) => (
                   <Link
                     key={slug}

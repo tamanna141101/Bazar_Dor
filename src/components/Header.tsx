@@ -20,6 +20,14 @@ const cats = [
   ["moshla", "🌶️", "মসলা"],
 ];
 
+const tickerItems = [
+  ["🍚", "স্বর্ণমাছি চাল", "১৪৮", "up", "২.১"],
+  ["🫘", "মসুর ডাল", "১৪২", "up", "১.৯"],
+  ["🫙", "সয়াবিন তেল", "১৭৮", "down", "১.২"],
+  ["🥔", "আলু", "৩৮", "down", "৩.৫"],
+  ["🐟", "রুই মাছ", "৩৮০", "up", "০.৮"],
+];
+
 function HeaderContent() {
   const path = usePathname();
   const router = useRouter();
@@ -40,6 +48,7 @@ function HeaderContent() {
       }
 
       setMenu(false);
+      setCategoryMenuOpen(false);
       toast.success("সাইন আউট সম্পন্ন");
       router.push("/");
       router.refresh();
@@ -49,9 +58,14 @@ function HeaderContent() {
   }
 
   return (
-    <header className="site-header">
+    <header className="site-header relative z-40">
+      {/* Top Bar */}
       <div className="topbar">
-        <Link href="/" className="brand">
+        <Link
+          href="/"
+          className="brand"
+          onClick={() => setCategoryMenuOpen(false)}
+        >
           <span className="brand-icon">
             <Image
               src="/assets/logo-icon.png"
@@ -76,6 +90,7 @@ function HeaderContent() {
           </span>
         </Link>
 
+        {/* Authentication */}
         <div className="auth-area">
           {isPending ? (
             <span className="login-link">লোড হচ্ছে...</span>
@@ -86,6 +101,7 @@ function HeaderContent() {
                 className="profile-button"
                 onClick={() => setMenu((current) => !current)}
                 aria-expanded={menu}
+                aria-label="প্রোফাইল মেনু"
               >
                 <span className="avatar">
                   {user.image ? (
@@ -136,9 +152,9 @@ function HeaderContent() {
       </div>
 
       {/* Category Navigation */}
-      <nav className="category-nav relative">
+      <nav className="category-nav relative z-50">
         <div className="nav-inner relative flex items-center justify-start overflow-visible">
-          {/* Desktop: Category links on the left */}
+          {/* Desktop Category Links */}
           <div className="hidden flex-wrap items-center justify-start gap-5 md:flex">
             {cats.map(([slug, icon, label]) => (
               <Link
@@ -153,7 +169,7 @@ function HeaderContent() {
             ))}
           </div>
 
-          {/* Mobile: Hamburger and dropdown */}
+          {/* Mobile Hamburger Menu */}
           <div className="relative ml-auto md:hidden">
             <button
               type="button"
@@ -166,6 +182,7 @@ function HeaderContent() {
                   : "ক্যাটাগরি মেনু খুলুন"
               }
               aria-expanded={categoryMenuOpen}
+              aria-controls="mobile-category-menu"
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 shadow-sm transition hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               {categoryMenuOpen ? (
@@ -176,12 +193,18 @@ function HeaderContent() {
             </button>
 
             {categoryMenuOpen && (
-              <div className="absolute right-0 top-full z-[100] mt-2 grid w-[min(288px,calc(100vw-32px))] grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
+              <div
+                id="mobile-category-menu"
+                className="absolute right-0 top-full z-[9999] mt-2 grid w-[min(288px,calc(100vw-32px))] grid-cols-2 gap-1 rounded-xl border border-gray-200 bg-white p-2 text-gray-700 shadow-xl"
+              >
                 {cats.map(([slug, icon, label]) => (
                   <Link
                     key={slug}
                     href={`/category/${slug}`}
                     onClick={() => setCategoryMenuOpen(false)}
+                    aria-current={
+                      path === `/category/${slug}` ? "page" : undefined
+                    }
                     className={`rounded-lg px-3 py-3 text-sm transition ${
                       path === `/category/${slug}`
                         ? "bg-green-50 font-semibold text-green-700"
@@ -197,18 +220,13 @@ function HeaderContent() {
         </div>
       </nav>
 
+      {/* Price Ticker */}
       <div className="ticker">
         <div className="ticker-track">
           {[0, 1].map((n) => (
             <span className="ticker-set" key={n}>
-              {[
-                ["🍚", "স্বর্ণমাছি চাল", "১৪৮", "up", "২.১"],
-                ["🫘", "মসুর ডাল", "১৪২", "up", "১.৯"],
-                ["🫙", "সয়াবিন তেল", "১৭৮", "down", "১.২"],
-                ["🥔", "আলু", "৩৮", "down", "৩.৫"],
-                ["🐟", "রুই মাছ", "৩৮০", "up", "০.৮"],
-              ].map(([icon, name, price, dir, pct], i) => (
-                <span className="ticker-item" key={i}>
+              {tickerItems.map(([icon, name, price, dir, pct], i) => (
+                <span className="ticker-item" key={`${n}-${i}`}>
                   {icon} {name} {price} টাকা/কেজি{" "}
                   <b className={dir === "up" ? "up" : "down"}>
                     {dir === "up" ? "▲" : "▼"} {pct}%

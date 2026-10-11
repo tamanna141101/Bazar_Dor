@@ -2,9 +2,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { UserRound } from "lucide-react";
 import { authClient } from "../../lib/auth-client";
 
 function LogOutIcon() {
@@ -29,57 +30,14 @@ function LogOutIcon() {
 
 export default function ProfilePage() {
   const router = useRouter();
-
   const { data: session, isPending } = authClient.useSession();
   const user = session?.user ?? null;
 
-  const [name, setName] = useState("");
-  const [saving, setSaving] = useState(false);
-
   useEffect(() => {
-    if (isPending) return;
-
-    if (!user) {
+    if (!isPending && !user) {
       router.replace("/signin?callbackURL=%2Fprofile");
-      return;
     }
-
-    setName(user.name || "");
   }, [user, isPending, router]);
-
-  async function update(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    const trimmedName = name.trim();
-
-    if (!trimmedName) {
-      toast.error("আপনার নাম লিখুন");
-      return;
-    }
-
-    setSaving(true);
-
-    try {
-      const result = await authClient.updateUser({
-        name: trimmedName,
-      });
-
-      if (result.error) {
-        toast.error(
-          result.error.message || "প্রোফাইল আপডেট করা যায়নি"
-        );
-        return;
-      }
-
-      await authClient.getSession();
-      toast.success("প্রোফাইল সফলভাবে আপডেট হয়েছে");
-      router.refresh();
-    } catch {
-      toast.error("প্রোফাইল আপডেট করা যায়নি। আবার চেষ্টা করুন।");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   async function handleSignOut() {
     try {
@@ -176,66 +134,22 @@ export default function ProfilePage() {
         </section>
 
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
-          <div className="mb-6 border-b border-gray-100 pb-5">
+          <div className="mb-5">
             <h2 className="text-xl font-bold text-gray-900">
               ব্যক্তিগত তথ্য
             </h2>
 
-            <p className="mt-1 text-sm text-gray-500">
-              আপনার নাম পরিবর্তন করতে নিচের ফর্মটি ব্যবহার করুন।
+            <p className="mt-2 text-sm text-gray-600">
+              আপনার নাম পরিবর্তন করতে Update Information বাটনে ক্লিক করুন।
             </p>
           </div>
 
-          <form onSubmit={update} className="space-y-5">
-            <div>
-              <label
-                htmlFor="profile-name"
-                className="mb-2 block text-sm font-semibold text-gray-700"
-              >
-                আপনার নাম
-              </label>
-
-              <input
-                id="profile-name"
-                type="text"
-                autoComplete="name"
-                value={name}
-                required
-                onChange={(e) => setName(e.target.value)}
-                placeholder="আপনার নাম লিখুন"
-                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-4 focus:ring-green-100"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="profile-email"
-                className="mb-2 block text-sm font-semibold text-gray-700"
-              >
-                ইমেইল ঠিকানা
-              </label>
-
-              <input
-                id="profile-email"
-                type="email"
-                value={user.email}
-                readOnly
-                className="w-full cursor-not-allowed rounded-xl border border-gray-200 bg-gray-100 px-4 py-3 text-gray-500 outline-none"
-              />
-
-              <p className="mt-2 text-xs text-gray-500">
-                ইমেইল ঠিকানা পরিবর্তন করা যাবে না।
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-4 focus:ring-green-200 sm:w-auto sm:min-w-40"
-            >
-              {saving ? "সংরক্ষণ হচ্ছে..." : "পরিবর্তন সংরক্ষণ করুন"}
-            </button>
-          </form>
+          <Link
+            href="/profile/update"
+            className="inline-flex items-center justify-center rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-200"
+          >
+            Update Information
+          </Link>
         </section>
 
         <p className="mt-6 text-center text-xs leading-5 text-gray-500">

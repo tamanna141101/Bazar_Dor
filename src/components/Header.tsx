@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Image from "next/image";
+import { UserRound } from "lucide-react";
 
 const cats = [
   ["chal", "🍚", "চাল"],
@@ -94,26 +95,26 @@ function HeaderContent() {
                 onClick={() => setMenu(!menu)}
               >
                 <span className="avatar">
-                  {user.name?.slice(0, 1) || "👤"}
+                  {user.name?.slice(0, 1) || <UserRound size={20} />}
                 </span>
                 <span>{user.name}</span>⌄
               </button>
 
+
               {menu && (
-                <div className="profile-menu">
+                <div className="profile-menu !bg-white">
                   <strong>{user.name}</strong>
                   <small>{user.email}</small>
-
-                  <Link
-                    href="/profile"
-                    onClick={() => setMenu(false)}
-                  >
-                    👤 আমার প্রোফাইল
+                  
+                  <Link href="/profile" onClick={() => setMenu(false)}>
+                    <UserRound size={18} />
+                    <span>আমার প্রোফাইল</span>
                   </Link>
 
                   <button onClick={logout}>↩ সাইন আউট</button>
                 </div>
               )}
+
             </div>
           ) : (
             <>

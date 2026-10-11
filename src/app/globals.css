@@ -708,9 +708,83 @@ tbody tr:last-child td {
 .auth-page > .back-link {
   margin-top: 22px;
 }
+
 .profile-wrap {
   position: relative;
+  z-index: 1001;
 }
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  width: 280px;
+  padding: 16px;
+
+  background: #ffffff;
+  color: #1f2937;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.profile-menu strong {
+  display: block;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.profile-menu small {
+  display: block;
+  color: #6b7280;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.profile-menu a,
+.profile-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-menu a:hover,
+.profile-menu button:hover {
+  background: #f3f4f6;
+}
+
+.profile-menu button {
+  color: #dc2626;
+}
+
 .profile-button {
   display: flex;
   align-items: center;
